@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Form Pendataan Persiapan SPMB 2026</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; background-color: #f4f4f9; }
+    .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    
+    .header-sekolah { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #4CAF50; padding-bottom: 15px; }
+    .logo { width: 90px; height: auto; margin-bottom: 10px; }
+    .nama-sekolah { font-size: 20px; font-weight: bold; color: #333; margin: 0; }
+    
+    h2 { text-align: center; color: #333; font-size: 18px; margin-top: 15px; }
+    label { font-weight: bold; margin-top: 10px; display: block; }
+    select, input[type="text"], input[type="file"] { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+    button:hover { background-color: #45a049; }
+    button[type="button"] { background-color: #2196F3; }
+    button[type="button"]:hover { background-color: #0b7dda; }
+    #status { text-align: center; font-weight: bold; margin-top: 15px; }
+    #formLanjutan { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <div class="header-sekolah">
+      <img src="logo.png" alt="Logo SMPN Satu Atap 1 Batukandik" class="logo">
+      <p class="nama-sekolah">SMPN Satu Atap 1 Batukandik</p>
+    </div>
+
+    <h2>Form Pendataan Persiapan SPMB 2026</h2>
+    <form id="spmbForm">
+      
+      <label>Asal SD:</label>
+      <select id="asal_sd" name="asal_sd" required onchange="tampilkanFormLanjutan()">
+        <option value="">-- Pilih Asal SD --</option>
+        <option value="SDN 1 Batukandik">SDN 1 Batukandik</option>
+        <option value="SDN 2 Batukandik">SDN 2 Batukandik</option>
+        <option value="SDN 5 Batukandik">SDN 5 Batukandik</option>
+      </select>
+
+      <div id="formLanjutan">
+        <label>Nama Siswa:</label>
+        <select id="nama_siswa" name="nama_siswa" required>
+          <option value="">-- Pilih Nama Siswa --</option>
+        </select>
+
+        <label>Alamat Lengkap:</label>
+        <input type="text" id="alamat" name="alamat" required>
+
+        <label>No HP / WA:</label>
+        <input type="text" 
+               id="no_hp" 
+               name="no_hp" 
+               inputmode="numeric" 
+               pattern="[0-9]+" 
+               title="Hanya diperbolehkan mengisi dengan angka" 
+               oninput="this.value = this.value.replace(/[^0-9]/g, '')" 
+               required>
+
+        <label>Koordinat Rumah (Otomatis):</label>
+        <input type="text" id="koordinat" name="koordinat" readonly required placeholder="Klik tombol di bawah untuk mengisi">
+        <button type="button" onclick="getLokasi()">📍 Dapatkan Koordinat Rumah</button>
+
+        <label>Pas Foto Siswa:</label>
+        <input type="file" id="foto" accept="image/*" required>
+
+        <button type="submit" id="btnSubmit">Kirim Data</button>
+      </div>
+    </form>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    // URL Web App sudah dipasang dengan benar menggunakan tanda kutip
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyNP66N_xEsOfIeJIM74ALo-2XNPqZN6Ar1PxnazoM8aLOcS-RWfAHXTwTR2KrsUQ_G/exec'; 
+    var dataMaster = {};
+
+    window.onload = function() {
+      document.getElementById('status').innerText = "Menghubungkan ke server database...";
+      
+      // Tambahan { redirect: "follow" } untuk memastikan koneksi ke Google Script lancar
+      fetch(scriptURL, { redirect: "follow" })
+        .then(response => response.json())
+        .then(data => {
+          dataMaster = data;
+          document.getElementById('status').innerText = ""; // Hilangkan teks jika berhasil terhubung
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          document.getElementById('status').innerText = "Gagal memuat koneksi database.";
+          document.getElementById('status').style.color = "red";
+        });
+    };
+
+    function tampilkanFormLanjutan() {
+      var sdTerpilih = document.getElementById('asal_sd').value;
+      var containerLanjutan = document.getElementById('formLanjutan');
+      var siswaSelect = document.getElementById('nama_siswa');
+      
+      siswaSelect.innerHTML = '<option value="">-- Pilih Nama Siswa --</option>'; 
+      
+      if (sdTerpilih !== "") {
+        containerLanjutan.style.display = "block";
+        var daftarSiswa = dataMaster[sdTerpilih] || [];
+        
+        if(daftarSiswa.length > 0) {
+          for (var i = 0; i < daftarSiswa.length; i++) {
+            var option = document.createElement("option");
+            option.text = daftarSiswa[i];
+            option.value = daftarSiswa[i];
+            siswaSelect.add(option);
+          }
+        } else {
+          var option = document.createElement("option");
+          option.text = "Tidak ada nama siswa terdaftar untuk sekolah ini";
+          option.value = "";
+          siswaSelect.add(option);
+        }
+      } else {
+        containerLanjutan.style.display = "none";
+      }
+    }
+
+    function getLokasi() {
+      if (navigator.geolocation) {
+        document.getElementById('koordinat').value = "Mencari lokasi...";
+        navigator.geolocation.getCurrentPosition(function(position) {
+          document.getElementById('koordinat').value = position.coords.latitude + ", " + position.coords.longitude;
+        }, function(error) {
+          alert("Gagal mendapatkan lokasi. Pastikan GPS aktif dan izin browser diberikan.");
+          document.getElementById('koordinat').value = "";
+        });
+      } else {
+        alert("Browser Anda tidak mendukung Geolocation.");
+      }
+    }
+
+    document.getElementById('spmbForm').addEventListener('submit', function(e) {
+      e.preventDefault(); 
+      
+      var btn = document.getElementById('btnSubmit');
+      var statusDiv = document.getElementById('status');
+      btn.disabled = true;
+      btn.innerText = "Mengirim...";
+      statusDiv.style.color = "black";
+      statusDiv.innerText = "Sedang mengunggah data pendaftaran, mohon tunggu...";
+
+      var file = document.getElementById('foto').files[0];
+      var reader = new FileReader();
+      
+      reader.onload = function(event) {
+        var dataKirim = {
+          asal_sd: document.getElementById('asal_sd').value,
+          nama_siswa: document.getElementById('nama_siswa').value,
+          alamat: document.getElementById('alamat').value,
+          no_hp: document.getElementById('no_hp').value,
+          koordinat: document.getElementById('koordinat').value,
+          fotoBase64: event.target.result,
+          fotoNama: file.name
+        };
+
+        fetch(scriptURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(dataKirim)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === "Berhasil") {
+            statusDiv.style.color = "green";
+            statusDiv.innerText = "Pengiriman data berhasil";
+            document.getElementById('spmbForm').reset();
+            document.getElementById('formLanjutan').style.display = "none";
+          } else {
+            statusDiv.style.color = "red";
+            statusDiv.innerText = "Gagal: " + data.pesan;
+          }
+          btn.disabled = false;
+          btn.innerText = "Kirim Data";
+        })
+        .catch(error => {
+          console.error('Error POST:', error);
+          statusDiv.style.color = "red";
+          statusDiv.innerText = "Terjadi kesalahan koneksi jaringan!";
+          btn.disabled = false;
+          btn.innerText = "Kirim Data";
+        });
+      };
+
+      if (file) {
+        reader.readAsDataURL(file);
+      }
+    });
+  </script>
+</body>
+</html>
