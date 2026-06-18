@@ -21,9 +21,8 @@
     button[type="button"]:hover { background-color: #0b7dda; }
     #status { text-align: center; font-weight: bold; margin-top: 15px; }
     
-    /* Tambahan CSS untuk Loading dan menyembunyikan form di awal */
     #formLanjutan { display: none; }
-    #spmbForm { display: none; } /* Form utama disembunyikan sepenuhnya di awal */
+    #spmbForm { display: none; }
     #pesanLoading { text-align: center; font-weight: bold; color: #ff9800; padding: 20px; border: 1px dashed #ff9800; border-radius: 5px; margin-top: 15px; background: #fffdf5; }
   </style>
 </head>
@@ -74,7 +73,7 @@
         <input type="text" id="koordinat" name="koordinat" readonly required placeholder="Klik tombol di bawah untuk mengisi">
         <button type="button" onclick="getLokasi()">📍 Dapatkan Koordinat Rumah</button>
 
-        <label>Pas Foto Siswa:</label>
+        <label>Pas Foto Siswa (Maks. 10MB):</label>
         <input type="file" id="foto" accept="image/*" required>
 
         <button type="submit" id="btnSubmit">Kirim Data</button>
@@ -88,20 +87,15 @@
     var dataMaster = {};
 
     window.onload = function() {
-      // Saat memuat, fetch data dari Google Script
       fetch(scriptURL, { redirect: "follow" })
         .then(response => response.json())
         .then(data => {
           dataMaster = data;
-          
-          // Jika sukses, hilangkan kotak loading dan munculkan formulirnya
           document.getElementById('pesanLoading').style.display = "none";
           document.getElementById('spmbForm').style.display = "block";
         })
         .catch(error => {
           console.error('Error:', error);
-          
-          // Jika gagal/error (misal karena internet mati), tampilkan pesan error yang jelas
           var boxLoading = document.getElementById('pesanLoading');
           boxLoading.style.color = "red";
           boxLoading.style.borderColor = "red";
@@ -156,6 +150,26 @@
     document.getElementById('spmbForm').addEventListener('submit', function(e) {
       e.preventDefault(); 
       
+      var file = document.getElementById('foto').files[0];
+
+      // --- LOGIKA VALIDASI FOTO BARU ---
+      if (file) {
+        // 1. Validasi apakah file benar-benar sebuah gambar (mencegah format pdf/doc dll lolos)
+        if (!file.type.startsWith('image/')) {
+          alert("Pendaftaran Gagal: File yang diunggah wajib berupa gambar/foto (format JPG, PNG, dll).");
+          return; // Hentikan fungsi di sini
+        }
+
+        // 2. Validasi ukuran file (Maksimal 10 MB)
+        // 10 MB = 10 * 1024 * 1024 = 10485760 bytes
+        var maxSizeBytes = 10 * 1048576; 
+        if (file.size > maxSizeBytes) {
+          alert("Pendaftaran Gagal: Ukuran foto Anda " + (file.size / 1048576).toFixed(2) + " MB. Maksimal ukuran file adalah 10 MB. Silakan kompres atau pilih foto lain.");
+          return; // Hentikan fungsi di sini
+        }
+      }
+      // ----------------------------------
+      
       var btn = document.getElementById('btnSubmit');
       var statusDiv = document.getElementById('status');
       btn.disabled = true;
@@ -163,7 +177,6 @@
       statusDiv.style.color = "black";
       statusDiv.innerText = "Sedang mengunggah data pendaftaran, mohon tunggu...";
 
-      var file = document.getElementById('foto').files[0];
       var reader = new FileReader();
       
       reader.onload = function(event) {
