@@ -20,7 +20,11 @@
     button[type="button"] { background-color: #2196F3; }
     button[type="button"]:hover { background-color: #0b7dda; }
     #status { text-align: center; font-weight: bold; margin-top: 15px; }
+    
+    /* Tambahan CSS untuk Loading dan menyembunyikan form di awal */
     #formLanjutan { display: none; }
+    #spmbForm { display: none; } /* Form utama disembunyikan sepenuhnya di awal */
+    #pesanLoading { text-align: center; font-weight: bold; color: #ff9800; padding: 20px; border: 1px dashed #ff9800; border-radius: 5px; margin-top: 15px; background: #fffdf5; }
   </style>
 </head>
 <body>
@@ -32,6 +36,11 @@
     </div>
 
     <h2>Form Pendataan Persiapan SPMB 2026</h2>
+
+    <div id="pesanLoading">
+      ⏳ Menghubungkan ke database server...<br>Mohon tunggu sebentar.
+    </div>
+
     <form id="spmbForm">
       
       <label>Asal SD:</label>
@@ -75,24 +84,29 @@
   </div>
 
   <script>
-    // URL Web App sudah dipasang dengan benar menggunakan tanda kutip
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyNP66N_xEsOfIeJIM74ALo-2XNPqZN6Ar1PxnazoM8aLOcS-RWfAHXTwTR2KrsUQ_G/exec'; 
     var dataMaster = {};
 
     window.onload = function() {
-      document.getElementById('status').innerText = "Menghubungkan ke server database...";
-      
-      // Tambahan { redirect: "follow" } untuk memastikan koneksi ke Google Script lancar
+      // Saat memuat, fetch data dari Google Script
       fetch(scriptURL, { redirect: "follow" })
         .then(response => response.json())
         .then(data => {
           dataMaster = data;
-          document.getElementById('status').innerText = ""; // Hilangkan teks jika berhasil terhubung
+          
+          // Jika sukses, hilangkan kotak loading dan munculkan formulirnya
+          document.getElementById('pesanLoading').style.display = "none";
+          document.getElementById('spmbForm').style.display = "block";
         })
         .catch(error => {
           console.error('Error:', error);
-          document.getElementById('status').innerText = "Gagal memuat koneksi database.";
-          document.getElementById('status').style.color = "red";
+          
+          // Jika gagal/error (misal karena internet mati), tampilkan pesan error yang jelas
+          var boxLoading = document.getElementById('pesanLoading');
+          boxLoading.style.color = "red";
+          boxLoading.style.borderColor = "red";
+          boxLoading.style.background = "#fff0f0";
+          boxLoading.innerHTML = "❌ Gagal terhubung ke database.<br>Pastikan internet aktif lalu <b>refresh (muat ulang)</b> halaman ini.";
         });
     };
 
